@@ -105,7 +105,6 @@ export function createRemoteConfig(
 	const mode = argv.mode ?? 'development';
 	const developmentStandalone = mode === 'development' ? standalone : undefined;
 	const config = baseConfig(appDirectory, developmentStandalone?.entry ?? 'src/index.ts', port, mode);
-	if (developmentStandalone && config.output) config.output.publicPath = '/';
 	config.plugins?.push(new ModuleFederationPlugin({ name: `${name}Mfe`, filename: 'remoteEntry.js', exposes, shared }));
 	if (developmentStandalone) {
 		config.plugins?.push(new HtmlWebpackPlugin({

@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 interface PackageManifest {
 	name: string;
@@ -22,12 +22,40 @@ const requiredFiles = [
 	'README.md',
 ];
 
+interface BuildModule {
+	createRemoteConfig(
+		options: {
+			appDirectory: string;
+			name: string;
+			port: number;
+			exposes: Record<string, string>;
+			standalone: { entry: string };
+		},
+		environment: Record<string, unknown>,
+		arguments_: { mode: 'development' },
+	): { output?: { publicPath?: unknown } };
+}
+
 if (!/^@[^/]+\/[^/]+$/.test(manifest.name)) failures.push('Package name must use an npm scope.');
 if (!/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(manifest.version)) failures.push('Package version must be valid semver.');
 if (!manifest.repository?.url) failures.push('Package repository metadata is required for npm provenance.');
 
 for (const relativePath of requiredFiles) {
 	if (!fs.existsSync(path.join(packageDirectory, relativePath))) failures.push(`Missing package output: ${relativePath}`);
+}
+
+const buildModuleUrl = pathToFileURL(path.join(packageDirectory, 'dist/build.js')).href;
+const { createRemoteConfig } = await import(buildModuleUrl) as BuildModule;
+const standaloneConfig = createRemoteConfig({
+	appDirectory: packageDirectory,
+	name: 'validation',
+	port: 3999,
+	exposes: { './Validation': './src/validation' },
+	standalone: { entry: './src/dev.ts' },
+}, {}, { mode: 'development' });
+
+if (standaloneConfig.output?.publicPath !== 'auto') {
+	failures.push('Standalone remotes must preserve publicPath "auto" for federated chunk loading.');
 }
 
 if (failures.length > 0) {
