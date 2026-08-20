@@ -83,40 +83,11 @@ function baseConfig(appDirectory: string, entry: string, port: number, mode: Con
 	};
 }
 
-function dynamicRemote(scope: string, port: number, mode: Configuration['mode'], configuredFallback?: string): string {
-	const containerName = `${scope}Mfe`;
+function defaultRemoteUrl(scope: string, port: number, mode: Configuration['mode'], configuredFallback?: string): string {
 	const environmentName = `MFE_${scope.toUpperCase()}_URL`;
-	const fallback = process.env[environmentName]
+	return process.env[environmentName]
 		?? configuredFallback
 		?? (mode === 'development' ? `http://localhost:${port}/remoteEntry.js` : `/remotes/${scope}/remoteEntry.js`);
-
-	return `promise new Promise((resolve, reject) => {
-		const configured = window.__MFE_REMOTES__ && window.__MFE_REMOTES__.${scope};
-		const url = configured || ${JSON.stringify(fallback)};
-		const proxy = {
-			get: (request) => window.${containerName}.get(request),
-			init: (shareScope) => {
-				try { return window.${containerName}.init(shareScope); }
-				catch (error) { return undefined; }
-			}
-		};
-		if (window.${containerName}) return resolve(proxy);
-		const existing = document.querySelector('script[data-mfe="${scope}"]');
-		if (existing) {
-			existing.addEventListener('load', () => resolve(proxy));
-			existing.addEventListener('error', reject);
-			return;
-		}
-		const script = document.createElement('script');
-		script.src = url;
-		script.async = true;
-		script.dataset.mfe = '${scope}';
-		script.onload = () => window.${containerName}
-			? resolve(proxy)
-			: reject(new Error('Remote ${scope} did not register a container'));
-		script.onerror = () => reject(new Error('Unable to load ${scope} from ' + url));
-		document.head.appendChild(script);
-	})`;
 }
 
 export function createRemoteConfig(
@@ -140,14 +111,17 @@ export function createHostConfig(
 	const mode = argv.mode ?? 'development';
 	const config = baseConfig(appDirectory, 'src/index.tsx', 3000, mode);
 	if (config.output) config.output.publicPath = '/';
-	const remoteDefinitions = Object.fromEntries(
+	const defaultRemoteUrls = Object.fromEntries(
 		Object.entries(remotes).map(([scope, value]) => [
 			scope,
-			dynamicRemote(scope, value.port, mode, value.productionUrl),
+			defaultRemoteUrl(scope, value.port, mode, value.productionUrl),
 		]),
 	);
 	config.plugins?.push(
-		new ModuleFederationPlugin({ name: 'shell', remotes: remoteDefinitions, shared }),
+		new webpack.DefinePlugin({
+			__MFE_DEFAULT_REMOTES__: JSON.stringify(defaultRemoteUrls),
+		}),
+		new ModuleFederationPlugin({ name: 'shell', shared }),
 		new CopyWebpackPlugin({
 			patterns: [{ from: path.resolve(appDirectory, 'public'), to: '.', noErrorOnMissing: true }],
 		}),
