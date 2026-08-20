@@ -1,0 +1,36 @@
+{
+	"name": "@r01al/mfe-workforce-common-server",
+	"version": "1.0.0",
+	"type": "module",
+	"publishConfig": { "access": "public" },
+	"scripts": {
+		"build": "node scripts/clean.ts && tsc -p tsconfig.json",
+		"typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.scripts.json"
+	},
+	"exports": {
+		"./build": { "types": "./dist/build.d.ts", "import": "./dist/build.js" },
+		"./runtime": { "types": "./dist/runtime.d.ts", "import": "./dist/runtime.js" }
+	},
+	"files": ["dist", "README.md"],
+	"dependencies": {
+		"compression": "^1.8.1",
+		"copy-webpack-plugin": "^14.0.0",
+		"css-loader": "^7.1.4",
+		"express": "^5.1.0",
+		"html-webpack-plugin": "^5.6.8",
+		"mini-css-extract-plugin": "^2.10.2",
+		"style-loader": "^4.0.0",
+		"ts-loader": "^9.5.2",
+		"webpack": "^5.101.3",
+		"webpack-dev-server": "^6.0.0"
+	},
+	"peerDependencies": { "typescript": ">=5.9 <7", "webpack-cli": ">=6 <8" },
+	"devDependencies": {
+		"@types/compression": "^1.8.1",
+		"@types/express": "^5.0.3",
+		"@types/node": "^24.3.0",
+		"typescript": "^5.9.2",
+		"webpack-cli": "^6.0.1"
+	},
+	"engines": { "node": ">=24 <25" }
+}
