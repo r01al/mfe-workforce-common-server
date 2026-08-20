@@ -1,11 +1,27 @@
 {
 	"name": "@r01al/mfe-workforce-common-server",
 	"version": "1.0.0",
+	"description": "Shared Module Federation build configuration and production servers for Workforce micro-frontends.",
 	"type": "module",
-	"publishConfig": { "access": "public" },
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/r01al/mfe-workforce-common-server.git"
+	},
+	"homepage": "https://github.com/r01al/mfe-workforce-common-server#readme",
+	"bugs": "https://github.com/r01al/mfe-workforce-common-server/issues",
+	"keywords": ["micro-frontend", "module-federation", "webpack", "express", "typescript"],
+	"publishConfig": {
+		"access": "public",
+		"registry": "https://registry.npmjs.org/"
+	},
 	"scripts": {
 		"build": "node scripts/clean.ts && tsc -p tsconfig.json",
-		"typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.scripts.json"
+		"typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.scripts.json",
+		"check:package": "node scripts/check-package.ts",
+		"verify": "npm run typecheck && npm run build && npm run check:package",
+		"package": "npm run verify && node scripts/package.ts",
+		"release:check": "node scripts/check-release.ts",
+		"prepack": "npm run verify"
 	},
 	"exports": {
 		"./build": { "types": "./dist/build.d.ts", "import": "./dist/build.js" },
@@ -32,5 +48,6 @@
 		"typescript": "^5.9.2",
 		"webpack-cli": "^6.0.1"
 	},
-	"engines": { "node": ">=24 <25" }
+	"engines": { "node": ">=24 <25", "npm": ">=11" },
+	"packageManager": "npm@11.5.1"
 }
