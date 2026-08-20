@@ -14,6 +14,12 @@ export interface RemoteBuildOptions {
 	name: string;
 	port: number;
 	exposes: Record<string, string>;
+	standalone?: RemoteStandaloneOptions;
+}
+
+export interface RemoteStandaloneOptions {
+	entry: string;
+	title?: string;
 }
 
 export interface HostRemoteOptions {
@@ -95,10 +101,29 @@ export function createRemoteConfig(
 	_environment: Record<string, unknown> = {},
 	argv: BuildArguments = {},
 ): Configuration {
-	const { appDirectory, name, port, exposes } = options;
+	const { appDirectory, name, port, exposes, standalone } = options;
 	const mode = argv.mode ?? 'development';
-	const config = baseConfig(appDirectory, 'src/index.ts', port, mode);
+	const developmentStandalone = mode === 'development' ? standalone : undefined;
+	const config = baseConfig(appDirectory, developmentStandalone?.entry ?? 'src/index.ts', port, mode);
+	if (developmentStandalone && config.output) config.output.publicPath = '/';
 	config.plugins?.push(new ModuleFederationPlugin({ name: `${name}Mfe`, filename: 'remoteEntry.js', exposes, shared }));
+	if (developmentStandalone) {
+		config.plugins?.push(new HtmlWebpackPlugin({
+			title: developmentStandalone.title ?? `${name} development`,
+			meta: {
+				viewport: 'width=device-width, initial-scale=1',
+				'theme-color': '#ffffff',
+			},
+			templateContent: ({ htmlWebpackPlugin }) => `<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<title>${htmlWebpackPlugin.options.title}</title>
+	</head>
+	<body><div id="root"></div></body>
+</html>`,
+		}));
+	}
 	return config;
 }
 

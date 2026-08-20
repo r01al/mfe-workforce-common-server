@@ -1,6 +1,6 @@
 {
 	"name": "@r01al/mfe-workforce-common-server",
-	"version": "1.1.0",
+	"version": "1.2.0",
 	"description": "Shared Module Federation build configuration and production servers for Workforce micro-frontends.",
 	"type": "module",
 	"repository": {

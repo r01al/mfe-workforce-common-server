@@ -8,6 +8,33 @@ The Node and build-side platform library for the Workforce micro-frontends.
 import { createHostConfig, createRemoteConfig } from '@r01al/mfe-workforce-common-server/build';
 ```
 
+Remote applications can opt into a development-only standalone page while keeping
+their production build limited to the federated remote:
+
+```ts
+createRemoteConfig({
+	name: 'calendar',
+	appDirectory: process.cwd(),
+	port: 3004,
+	exposes: { './Calendar': './src/Calendar' },
+	standalone: {
+		entry: './src/dev.ts',
+		title: 'Calendar development',
+	},
+}, environment, argv);
+```
+
+The standalone entry and generated HTML are included only in development mode.
+Webpack Dev Server serves files from the application's `public` directory and
+falls back to the standalone page for browser-history routes.
+
+The entry must use an asynchronous bootstrap so Module Federation can initialize
+shared dependencies before React renders:
+
+```ts
+import('./dev-bootstrap');
+```
+
 Host builds receive their default remote URLs through the compile-time `__MFE_DEFAULT_REMOTES__` browser constant. The host loads and initializes each remote container on demand; `createHostConfig` intentionally does not register static host remotes, preventing Webpack share-scope startup from downloading every `remoteEntry.js`.
 
 `@r01al/mfe-workforce-common-server/runtime` exports production Express hosting with compression, CORS, cache policy, health endpoints, and shell history fallback:
